@@ -26,9 +26,12 @@
  * Blynk macro defined action raises ButtonPressed events
  */
 
+// libraries
 #include "Particle.h"
 #include "blynk.h"
 
+
+// my own code
 #include "Event.h"
 #include "BrewerState.h"
 #include "BrewTimer.h"
@@ -37,32 +40,49 @@
 #include "VPins.h"
 #include "music/Music.h"
 
+// core setup
 SYSTEM_MODE(AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
-
-
-
 const int SWITCH_PIN = D1; // put actual pin when wired
 const int BUZZER_PIN = A2; // put actual pin when wired
 
+
+// Key system states
 BrewerState currState = IDLE;
-BrewTimer timer([]() {handleEvent(TIMER_CONCLUDED);});
-IntervalActor blynkUpdater(1000, 0, []() {
-    Blynk.virtualWrite(TIME_REMAINING_DISP, timer.getTimeLeft());
-    Blynk.virtualWrite(CURRENT_STATE_DISP, currState);
-    Blynk.virtualWrite(CUP_STATUS_DISP, cupInBrewer);
-});
-
-// TODO: Verify that this maps correctly to closing / opening
-SwitchActor switchActor(SWITCH_PIN, []() {handleEvent(CUP_PLACED);}, []() {handleEvent(CUP_REMOVED);});
-
 boolean cupInBrewer = false;
+
+// key selection state
+boolean musicEnabled = false;
+
+const String STATE_STRINGS[] = {"Idle", "Heat", "Steep", "Hold", "Pour"};
+
+
 
 const uint32_t HEAT_TIME = 6000; // ms
 uint32_t steepTime = 3000;
 const uint32_t POUR_TIME = 4000;
+
+
+
+
+BrewTimer timer([]() {handleEvent(TIMER_CONCLUDED);});
+IntervalActor blynkTimerUpdater(1000, 0, []() {
+    Blynk.virtualWrite(TIME_REMAINING_DISP, timer.getTimeLeft());
+});
+
+// TODO: Verify that this maps correctly to closing / opening
+SwitchActor switchActor(SWITCH_PIN, []() {
+    handleEvent(CUP_PLACED);
+    Blynk.virtualWrite(CUP_STATUS_DISP, "Cup Placed");
+    cupInBrewer = true;
+}, []() {
+    handleEvent(CUP_REMOVED);
+    Blynk.virtualWrite(CUP_STATUS_DISP, "Cup Absent");
+    cupInBrewer = false;
+});
+
 
 // Start button
 BLYNK_WRITE(V0) {
@@ -86,41 +106,53 @@ BLYNK_WRITE(V5) {
     }
 }
 
+// music toggle
+BLYNK_WRITE(V3) {
+    if (param.asInt() == 1) {
+        musicEnabled = true;
+    } else {
+        musicEnabled = false;
+    }
+}
+
 
 void handleEvent(Event event) {
     // we conditionally handle events based on current state
     switch (event) {
         case BUTTON_PRESSED:
             if (currState == IDLE) {
-                // start the cycle from idle
+                // if we're idle and start pressed, go to heat and start heat timer
                 currState = HEAT;
                 timer.startTimer(HEAT_TIME);
             } else {
-                // wherever we are, just stop
+                // If we're in any other state and stop pressed, go to idle
                 currState = IDLE;
             }
         break;
         case CUP_PLACED:
             // we only care if the cup was placed while holding
+            // if cup is placed while holding, start pouring
             if (currState == HOLD) {
                 currState = POUR;
                 timer.startTimer(POUR_TIME);
             }
-            cupInBrewer = true;
         break;
         case CUP_REMOVED:
-            cupInBrewer = false;
-            if (currState == POUR) {
+            // if cup is removed while pouring, return to hold
+            if (currState == POUR) { 
                 currState = HOLD;
             }
         break;
         case TIMER_CONCLUDED:
             switch (currState) {
                 case HEAT:
+                    // if timer concludes while heating, start steeping
                     currState = STEEP;
                     timer.startTimer(steepTime);
                 break;
                 case STEEP:
+                    // if timer concludes while heating, check if cup is present.
+                    // If cup is present, start pouring immediately, otherwise hold
                     if (cupInBrewer) {
                         currState = POUR;
                         timer.startTimer(POUR_TIME);
@@ -129,12 +161,18 @@ void handleEvent(Event event) {
                     }
                 break;
                 case POUR:
+                    // if timer concludes while pouring, return to idle and play music if enabled
                     currState = IDLE;
-                    playTune(BUZZER_PIN);
+                    if (musicEnabled) {
+                        playTune(BUZZER_PIN);
+                    }
                 break;
             }
         break;
     }
+
+    // finally, we want to update Blynk since our state just changed
+    Blynk.virtualWrite(CURRENT_STATE_DISP, STATE_STRINGS[currState]);
 }
 
 
@@ -150,5 +188,5 @@ void loop() {
     timer.update();
     switchActor.act();
     Blynk.run();
-    blynkUpdater.act();
+    blynkTimerUpdater.act();
 }
