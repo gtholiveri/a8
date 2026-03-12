@@ -1,0 +1,9 @@
+#include "blynk.h"
+enum VPins {
+    START_BUTTON = V0,
+    TIME_REMAINING_DISP = V1,
+    CURRENT_STATE_DISP = V2,
+    ENDING_SOUND_SLIDER = V3,
+    CUP_STATUS_DISP = V4,
+    TEA_TYPE_SELECTOR = V5,
+};

@@ -32,25 +32,55 @@
 #include "Event.h"
 #include "BrewerState.h"
 #include "BrewTimer.h"
+#include "SwitchActor.h"
+#include "IntervalActor.h"
+#include "VPins.h"
 
 SYSTEM_MODE(AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
-
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
+
+
+
+
+const int SWITCH_PIN = D1; // put actual pin when wired
+const int BUZZER_PIN = A2; // put actual pin when wired
 
 BrewerState currState = IDLE;
 BrewTimer timer([]() {handleEvent(TIMER_CONCLUDED);});
+IntervalActor blynkUpdater(1000, 0, []() {
+    Blynk.virtualWrite(TIME_REMAINING_DISP, timer.getTimeLeft());
+    Blynk.virtualWrite(CURRENT_STATE_DISP, currState);
+    Blynk.virtualWrite(CUP_STATUS_DISP, cupInBrewer);
+});
+
+// TODO: Verify that this maps correctly to closing / opening
+SwitchActor switchActor(SWITCH_PIN, []() {handleEvent(CUP_PLACED);}, []() {handleEvent(CUP_REMOVED);});
 
 boolean cupInBrewer = false;
 
 const uint32_t HEAT_TIME = 6000; // ms
-const uint32_t STEEP_TIME = 6000;
+uint32_t steepTime = 3000;
 const uint32_t POUR_TIME = 4000;
 
 // Start button
 BLYNK_WRITE(V0) {
     if (param.asInt() == 1) {
         handleEvent(BUTTON_PRESSED);
+    }
+}
+
+BLYNK_WRITE(V5) {
+    switch (param.asInt()) {
+        case 0:
+            steepTime = 3000;
+        break;
+        case 1:
+            steepTime = 2000;
+        break;
+        case 2:
+            steepTime = 400;
+        break;
     }
 }
 
@@ -84,10 +114,15 @@ void handleEvent(Event event) {
             switch (currState) {
                 case HEAT:
                     currState = STEEP;
-                    timer.startTimer(STEEP_TIME);
+                    timer.startTimer(steepTime);
                 break;
                 case STEEP:
-                    currState = HOLD;
+                    if (cupInBrewer) {
+                        currState = POUR;
+                        timer.startTimer(POUR_TIME);
+                    } else {
+                        currState = HOLD;
+                    }
                 break;
                 case POUR:
                     currState = IDLE;
@@ -106,5 +141,7 @@ void setup() {
 void loop() {
     // do stuff
     timer.update();
+    switchActor.act();
     Blynk.run();
+    blynkUpdater.act();
 }
