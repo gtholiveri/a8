@@ -71,6 +71,7 @@ BLYNK_WRITE(V0) {
     }
 }
 
+// Tea type slider
 BLYNK_WRITE(V5) {
     switch (param.asInt()) {
         case 0:
@@ -109,7 +110,6 @@ void handleEvent(Event event) {
         break;
         case CUP_REMOVED:
             cupInBrewer = false;
-            // "If switch opened while in POUR, go to HOLD"
             if (currState == POUR) {
                 currState = HOLD;
             }
