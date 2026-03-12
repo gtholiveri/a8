@@ -7,4 +7,7 @@
 
 extern const uint32_t NOTE_DUR;
 
+Tune getZeldaItemGetTune();
+void playTune(int pin);
+
 #endif

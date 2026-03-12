@@ -35,6 +35,7 @@
 #include "SwitchActor.h"
 #include "IntervalActor.h"
 #include "VPins.h"
+#include "music/Music.h"
 
 SYSTEM_MODE(AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
@@ -79,7 +80,7 @@ BLYNK_WRITE(V5) {
             steepTime = 2000;
         break;
         case 2:
-            steepTime = 400;
+            steepTime = 4000;
         break;
     }
 }
@@ -126,6 +127,7 @@ void handleEvent(Event event) {
                 break;
                 case POUR:
                     currState = IDLE;
+                    playTune(BUZZER_PIN);
                 break;
             }
         break;
@@ -135,7 +137,9 @@ void handleEvent(Event event) {
 
 void setup() {
     Serial.begin(9600);
-    // pinMode(pin, mode);
+    pinMode(SWITCH_PIN, INPUT_PULLUP);
+    pinMode(BUZZER_PIN, OUTPUT);
+    Blynk.begin(BLYNK_AUTH_TOKEN);
 }
 
 void loop() {
