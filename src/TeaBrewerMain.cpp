@@ -109,7 +109,10 @@ void handleEvent(Event event) {
         break;
         case CUP_REMOVED:
             cupInBrewer = false;
-            // assignment doesn't say anything about stopping pour
+            // "If switch opened while in POUR, go to HOLD"
+            if (currState == POUR) {
+                currState = HOLD;
+            }
         break;
         case TIMER_CONCLUDED:
             switch (currState) {
