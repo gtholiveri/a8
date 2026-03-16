@@ -1,4 +1,4 @@
-#include "BrewTimer.h"
+#include "../include/BrewTimer.h"
 
 BrewTimer::BrewTimer(std::function<void()> timerEndCallback)
     : currentlyTiming(false), currentTimingInterval(0), timerStartTime(0), timerEndCallback(timerEndCallback) {}
@@ -24,5 +24,22 @@ void BrewTimer::update() {
 }
 
 uint32_t BrewTimer::getTimeLeft() {
-    return currentTimingInterval - (millis() - timerStartTime);
+    if (currentlyTiming) {
+        return currentTimingInterval - (millis() - timerStartTime);
+    } else {
+        return 0;
+    }
+}
+
+String BrewTimer::getFormattedTimeLeft() {
+        uint32_t timeLeftms = currentTimingInterval - (millis() - timerStartTime);
+        return String(timeLeftms / 1000) + " s";
+}
+
+boolean BrewTimer::getCurrentlyTiming() {
+    return currentlyTiming;
+}
+
+void BrewTimer::stop() {
+    currentlyTiming = false;
 }

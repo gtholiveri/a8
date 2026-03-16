@@ -1,4 +1,4 @@
-#include "IntervalActor.h"
+#include "../include/IntervalActor.h"
 
 
 IntervalActor::IntervalActor(uint32_t interval, uint32_t offset, std::function<void()> callback) : interval(interval), offset(offset), lastRun(millis() - interval + (offset % interval)), callback(callback) {}

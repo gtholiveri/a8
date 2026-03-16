@@ -1,4 +1,4 @@
-#include "SwitchActor.h"
+#include "../include/SwitchActor.h"
 
 SwitchActor::SwitchActor(int pin,
                          std::function<void()> risingAction,

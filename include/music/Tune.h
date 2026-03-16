@@ -3,7 +3,7 @@
 
 #include "Particle.h"
 #include <vector>
-#include "music/Note.h"
+#include "Note.h"
 
 class Tune {
 public:

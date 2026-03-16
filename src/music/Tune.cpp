@@ -1,4 +1,4 @@
-#include "music/Tune.h"
+#include "../include/music/Tune.h"
 
 Tune::Tune() {
     notes = std::vector<Note>();
@@ -17,13 +17,13 @@ void Tune::playTune(int pin) {
 
         switch (notes[i].articulation) {
             case STACCATO:
-                tone(notes[i].pitch, notes[i].duration * STACCATO_MULT);
+                tone(pin, notes[i].pitch, notes[i].duration * STACCATO_MULT);
             break;
             case NON_LEGATO:
-                tone(notes[i].pitch, notes[i].duration * NON_LEGATO_MULT);
+                tone(pin, notes[i].pitch, notes[i].duration * NON_LEGATO_MULT);
             break;
             case LEGATO:
-                tone(notes[i].pitch, notes[i].duration * LEGATO_MULT);
+                tone(pin, notes[i].pitch, notes[i].duration * LEGATO_MULT);
             break;
         }
         delay(notes[i].duration);

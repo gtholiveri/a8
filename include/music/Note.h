@@ -2,7 +2,7 @@
 #define NOTE_H
 
 #include "Particle.h"
-#include "music/Articulation.h"
+#include "Articulation.h"
 
 class Note {
 public:
